@@ -1,16 +1,21 @@
 # Makefile — Rosana frontend
 
-.PHONY: dev build start clean
+.PHONY: dev build start install clean
+
+install:
+	@echo "Installing dependencies"
+	cd src/frontend && npm install
 
 dev:
 	@echo "Starting frontend (Next.js)"
 	cd src/frontend && npm run dev
 
-build:
+build: install
 	@echo "Building frontend for production"
 	cd src/frontend && npm run build
 
-start: build
+start:
+	@if [ ! -d src/frontend/out ]; then $(MAKE) build; fi
 	@echo "Starting frontend (production)"
 	cd src/frontend && npm run start
 
