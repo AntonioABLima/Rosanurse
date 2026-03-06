@@ -1,7 +1,12 @@
 /** @type {import('next').NextConfig} */
+const isProd = process.env.NODE_ENV === "production"
+
 const nextConfig = {
   output: "export",
-  basePath: "/Rosanurse",
+  basePath: isProd ? "/Rosanurse" : "",
+  env: {
+    NEXT_PUBLIC_BASEPATH: isProd ? "/Rosanurse" : "",
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -11,7 +16,7 @@ const nextConfig = {
   turbopack: {
     resolveAlias: {
       // pdfjs-dist references canvas in some paths; alias it away in the browser build
-      canvas: { browser: "false" },
+      canvas: "./lib/canvas-stub.js",
     },
   },
 }

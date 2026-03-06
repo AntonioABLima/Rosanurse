@@ -14,8 +14,8 @@ type TextItem = { str: string; transform: number[] }
 async function extractLines(file: File): Promise<string[]> {
   const { getDocument, GlobalWorkerOptions } = await import("pdfjs-dist/legacy/build/pdf.mjs")
 
-  // Worker bundled locally in /public to avoid CDN dependency
-  GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs"
+  // Worker bundled locally in /public — prefix with basePath for GitHub Pages
+  GlobalWorkerOptions.workerSrc = `${process.env.NEXT_PUBLIC_BASEPATH ?? ""}/pdf.worker.min.mjs`
 
   const buffer = await file.arrayBuffer()
   const pdf = await getDocument({ data: new Uint8Array(buffer) }).promise
