@@ -26,7 +26,7 @@ const steps = [
   {
     icon: <ClipboardCopy className="size-5 text-primary" />,
     title: "Copie para o sistema",
-    description: "Revise o resultado, aplique um template de consulta se desejar, e copie para o seu prontuário.",
+    description: "Revise o resultado e copie diretamente para o seu prontuário.",
   },
 ]
 

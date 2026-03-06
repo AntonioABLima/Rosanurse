@@ -54,7 +54,6 @@ export default function Home() {
           <ResultPage
             text={resultText}
             onReset={handleReset}
-            onNavigateTemplates={() => handleNavigate("resumo")}
           />
         )}
         {screen === "settings" && <SettingsPage />}
