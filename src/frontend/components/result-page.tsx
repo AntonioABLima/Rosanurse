@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { ClipboardCheck, FileText, RotateCcw, Copy, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useTheme, themes } from "@/components/theme-provider"
 
 interface ResultPageProps {
   text: string
@@ -11,6 +12,12 @@ interface ResultPageProps {
 
 export function ResultPage({ text, onReset }: ResultPageProps) {
   const [copied, setCopied] = useState(false)
+  const { isDark, currentTheme } = useTheme()
+
+  const theme = themes.find((t) => t.id === currentTheme)!
+  const primary = isDark ? theme.darkColors.primary : theme.colors.primary
+  const cursorColor = isDark ? "%23FFFFFF" : primary.replace("#", "%23")
+  const cursorSvg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='18' viewBox='0 0 14 18' shape-rendering='crispEdges'%3E%3Cline x1='4' y1='1' x2='10' y2='1' stroke='${cursorColor}' stroke-width='2'/%3E%3Cline x1='7' y1='1' x2='7' y2='17' stroke='${cursorColor}' stroke-width='2'/%3E%3Cline x1='4' y1='17' x2='10' y2='17' stroke='${cursorColor}' stroke-width='2'/%3E%3C/svg%3E") 7 9, text`
 
   async function handleCopy() {
     await navigator.clipboard.writeText(text)
@@ -39,6 +46,7 @@ export function ResultPage({ text, onReset }: ResultPageProps) {
               readOnly
               value={text}
               rows={12}
+              style={{ cursor: cursorSvg }}
               className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 pr-10 text-sm leading-relaxed text-foreground focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
               aria-label="Texto extraído do PDF"
             />
