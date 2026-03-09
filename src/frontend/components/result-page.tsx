@@ -36,7 +36,7 @@ export function ResultPage({ text, onReset }: ResultPageProps) {
             Resultado
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            O texto extraído do seu PDF
+            O texto processado
           </p>
         </div>
 
@@ -48,7 +48,7 @@ export function ResultPage({ text, onReset }: ResultPageProps) {
               rows={12}
               style={{ cursor: cursorSvg }}
               className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 pr-10 text-sm leading-relaxed text-foreground focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
-              aria-label="Texto extraído do PDF"
+              aria-label="Texto processado"
             />
             <button
               onClick={handleCopy}
@@ -83,7 +83,7 @@ export function ResultPage({ text, onReset }: ResultPageProps) {
               className="w-full text-base font-semibold"
             >
               <RotateCcw className="size-4" />
-              Processar outro PDF
+              Processar outro texto
             </Button>
           </div>
         </div>

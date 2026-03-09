@@ -1,9 +1,11 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
-import { CloudUpload, FileText, Loader2, X, HelpCircle, Upload, Cpu, ClipboardCopy, AlertCircle } from "lucide-react"
+import { useState } from "react"
+import { ClipboardPaste, HelpCircle, Cpu, ClipboardCopy, AlertCircle, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { processPDF } from "@/lib/pdf-processor"
+import { processText } from "@/lib/text-processor"
+import { useTheme, themes } from "@/components/theme-provider"
+
 import {
   Dialog,
   DialogContent,
@@ -14,14 +16,14 @@ import {
 
 const steps = [
   {
-    icon: <Upload className="size-5 text-primary" />,
-    title: "Envie o PDF",
-    description: "Arraste ou selecione o arquivo de exames ou resultado do paciente.",
+    icon: <ClipboardPaste className="size-5 text-primary" />,
+    title: "Cole o texto do PDF",
+    description: "Abra o PDF, selecione todo o texto, copie e cole aqui.",
   },
   {
     icon: <Cpu className="size-5 text-primary" />,
     title: "Processe",
-    description: 'Clique em "Processar" para extrair e organizar o texto automaticamente.',
+    description: 'Clique em "Processar" para organizar o texto automaticamente.',
   },
   {
     icon: <ClipboardCopy className="size-5 text-primary" />,
@@ -35,57 +37,40 @@ interface UploadPageProps {
 }
 
 export function UploadPage({ onProcessed }: UploadPageProps) {
-  const [file, setFile] = useState<File | null>(null)
-  const [isDragOver, setIsDragOver] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [pastedText, setPastedText] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [pasted, setPasted] = useState(false)
+  const { isDark, currentTheme } = useTheme()
 
-  const handleFile = useCallback((f: File) => {
-    if (f.type === "application/pdf") {
-      setFile(f)
+  const theme = themes.find((t) => t.id === currentTheme)!
+  const primary = isDark ? theme.darkColors.primary : theme.colors.primary
+  const cursorColor = isDark ? "%23FFFFFF" : primary.replace("#", "%23")
+  const cursorSvg = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='18' viewBox='0 0 14 18' shape-rendering='crispEdges'%3E%3Cline x1='4' y1='1' x2='10' y2='1' stroke='${cursorColor}' stroke-width='2'/%3E%3Cline x1='7' y1='1' x2='7' y2='17' stroke='${cursorColor}' stroke-width='2'/%3E%3Cline x1='4' y1='17' x2='10' y2='17' stroke='${cursorColor}' stroke-width='2'/%3E%3C/svg%3E") 7 9, text`
+
+  async function handlePaste() {
+    try {
+      const text = await navigator.clipboard.readText()
+      setPastedText(text)
+      setPasted(true)
+      setTimeout(() => setPasted(false), 2000)
+    } catch {
+      // user denied clipboard permission — they can paste manually
     }
-  }, [])
-
-  function handleDrop(e: React.DragEvent) {
-    e.preventDefault()
-    setIsDragOver(false)
-    const dropped = e.dataTransfer.files[0]
-    if (dropped) handleFile(dropped)
   }
 
-  function handleDragOver(e: React.DragEvent) {
-    e.preventDefault()
-    setIsDragOver(true)
-  }
-
-  function handleDragLeave(e: React.DragEvent) {
-    e.preventDefault()
-    setIsDragOver(false)
-  }
-
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = e.target.files?.[0]
-    if (selected) handleFile(selected)
-  }
-
-  function clearFile() {
-    setFile(null)
-    if (inputRef.current) inputRef.current.value = ""
-  }
-
-  async function handleProcess() {
-    if (!file) return
-    setIsProcessing(true)
+  function handleProcess() {
+    const trimmed = pastedText.trim()
+    if (!trimmed) return
     setError(null)
     try {
-      const text = await processPDF(file)
-      onProcessed(text)
-    } catch (e) {
-      setError("Não foi possível processar o PDF. Verifique se o arquivo é válido.")
-      console.error(e)
-    } finally {
-      setIsProcessing(false)
+      const result = processText(trimmed)
+      if (!result) {
+        setError("Não foi possível extrair exames do texto. Verifique se o texto está completo.")
+        return
+      }
+      onProcessed(result)
+    } catch {
+      setError("Erro ao processar o texto. Tente novamente.")
     }
   }
 
@@ -94,13 +79,13 @@ export function UploadPage({ onProcessed }: UploadPageProps) {
       <div className="w-full max-w-lg">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary">
-            <CloudUpload className="size-7 text-primary-foreground" />
+            <ClipboardPaste className="size-7 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            Upload de PDF
+            Colar texto do PDF
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Envie seu arquivo para processamento
+            Cole o texto copiado do seu PDF para processamento
           </p>
           <Dialog>
             <DialogTrigger asChild>
@@ -138,59 +123,25 @@ export function UploadPage({ onProcessed }: UploadPageProps) {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-8 shadow-sm">
-          <div
-            onClick={() => inputRef.current?.click()}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") inputRef.current?.click()
-            }}
-            aria-label="Arraste seu PDF aqui ou clique para selecionar"
-            className={`flex cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed px-6 py-12 transition-colors ${
-              isDragOver
-                ? "border-primary bg-primary/10"
-                : "border-accent bg-background hover:border-primary/60"
-            }`}
-          >
-            <CloudUpload
-              className={`size-12 ${
-                isDragOver ? "text-primary" : "text-muted-foreground"
-              }`}
+          <div className="relative">
+            <textarea
+              placeholder="Cole aqui o texto copiado do PDF..."
+              value={pastedText}
+              onChange={(e) => setPastedText(e.target.value)}
+              rows={12}
+              style={{ cursor: cursorSvg }}
+              className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 pr-10 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30"
+              aria-label="Texto do PDF"
             />
-            <p className="text-center text-sm leading-relaxed text-muted-foreground">
-              Arraste seu PDF aqui ou clique para selecionar
-            </p>
-            <input
-              ref={inputRef}
-              type="file"
-              accept=".pdf,application/pdf"
-              onChange={handleInputChange}
-              className="sr-only"
-              aria-hidden="true"
-            />
+            <button
+              onClick={handlePaste}
+              title="Colar texto"
+              className="absolute right-2.5 top-2.5 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              aria-label="Colar texto"
+            >
+              {pasted ? <Check className="size-4 text-primary" /> : <ClipboardPaste className="size-4" />}
+            </button>
           </div>
-
-          {file && (
-            <div className="mt-4 flex items-center gap-3 rounded-lg border border-border bg-background px-4 py-3">
-              <FileText className="size-5 shrink-0 text-primary" />
-              <span className="flex-1 truncate text-sm font-medium text-foreground">
-                {file.name}
-              </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  clearFile()
-                }}
-                className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                aria-label="Remover arquivo"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-          )}
 
           {error && (
             <div className="mt-4 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -201,18 +152,11 @@ export function UploadPage({ onProcessed }: UploadPageProps) {
 
           <Button
             onClick={handleProcess}
-            disabled={!file || isProcessing}
+            disabled={!pastedText.trim()}
             size="lg"
             className="mt-6 w-full text-base font-semibold"
           >
-            {isProcessing ? (
-              <>
-                <Loader2 className="size-5 animate-spin" />
-                Processando...
-              </>
-            ) : (
-              "Processar"
-            )}
+            Processar
           </Button>
         </div>
       </div>
