@@ -17,9 +17,10 @@ build: install
 start:
 	@if [ ! -d src/frontend/out ]; then $(MAKE) build; fi
 	@echo "Starting frontend (production)"
-	cd src/frontend && npm run start
+	cd src/frontend && npx serve out
 
 clean:
 	@echo "Cleaning generated files"
 	rm -rf src/frontend/node_modules
 	rm -rf src/frontend/.next
+	rm -rf src/frontend/out
